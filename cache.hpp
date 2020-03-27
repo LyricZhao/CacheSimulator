@@ -5,18 +5,15 @@
 
 # include "layout.hpp"
 # include "replace.hpp"
-
-typedef unsigned long long  u64;
-typedef unsigned int        u32;
-typedef unsigned char       u8;
+# include "utility.hpp"
 
 class Cache {
     int hit, miss;
-    CacheLayout *layout;
+    CacheLayout64 *layout;
     CacheReplace *replace;
 
 public:
-    Cache(CacheLayout *_layout, CacheReplace *_replace) {
+    Cache(CacheLayout64 *_layout, CacheReplace *_replace) {
         hit = miss = 0;
         layout = _layout;
         replace = _replace;

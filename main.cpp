@@ -3,6 +3,7 @@
 
 # include "cache.hpp"
 # include "trace.hpp"
+# include "utility.hpp"
 
 int main() {
     TraceReader reader;
