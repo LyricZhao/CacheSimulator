@@ -50,6 +50,18 @@ public:
         }
         return ret;
     }
+
+    void put(u32 addr, u64 entry) {
+        u32 bits_l = addr * unit_bits, bits_r = bits_l + unit_bits;
+        u32 l = bits_l / 8, r = (bits_r - 1) / 8, processed = 0;
+        for (u32 i = l; i <= r; ++ i) {
+            u32 cut_size = (i == l) ? ((i + 1) * 8 - bits_l): 8;
+            u32 cut = std::min(processed + 8, unit_bits);
+            u8 update = cut_bits(entry, processed, cut);
+            data[i] |= update;
+            processed = cut;
+        }
+    }
 };
 
 # endif
