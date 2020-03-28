@@ -34,7 +34,7 @@ void testcase(const char *name,
 
 void debug() {
     // For debug
-    testcase("astar", "trace/astar.trace", LayoutType::DIRECT, ReplaceType::TREELRU, WriteAllocateType::WRITE_ALLOCATE, WritePolicyType::WRITE_BACK, 131072, 64);
+    testcase("astar", "trace/astar.trace", LayoutType::FULLY, ReplaceType::LRU, WriteAllocateType::WRITE_ALLOCATE, WritePolicyType::WRITE_BACK, 131072, 64);
 }
 
 const char* name[4] = {"astar", "bzip2", "mcf", "perlbench"};
@@ -44,7 +44,7 @@ const char* path[4] = {"trace/astar.trace", "trace/bzip2.trace", "trace/mcf.trac
 void experiment_1() {
     printf("Running experiment 1 ...\n");
     for (int i = 0; i < 4; ++ i)
-        for (auto layout: {DIRECT, WAY_4, WAY_8})
+        for (auto layout: {DIRECT, FULLY, WAY_4, WAY_8})
             for (auto block_size: {8, 32, 64})
                 testcase(name[i], path[i], layout,
                     ReplaceType::LRU, WriteAllocateType::WRITE_ALLOCATE,
@@ -75,6 +75,8 @@ int main() {
     debug();
 # else
     experiment_1();
+    experiment_2();
+    experiment_3();
 # endif
     return 0;
 }

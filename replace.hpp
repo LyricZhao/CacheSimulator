@@ -27,20 +27,13 @@ class LRUReplace: public CacheReplace {
 
 public:
     LRUReplace(u32 _count, u32 _ways) {
-        if (_ways > 16) {
-            printf("LRU does not support ways > 16\n");
-            exit(0);
-        }
-        
         count = _count, ways = _ways, width = std:: max(log2(ways), (u32) 1);
-        meta = new Bitmap(width * ways, count);
+        meta = new Bitmap(width, count * ways);
 
-        u64 entry = 0;
-        for (u32 i = 0; i < ways; ++ i) {
-            entry = (entry << width) | i;
-        }
-        for (u32 i = 0; i < count; ++ i) {
-            meta -> put(i, entry);
+        for (u32 i = 0, index = 0; i < count; ++ i) {
+            for (u32 j = 0; j < ways; ++ j, ++ index) {
+                meta -> put(index, j);
+            }
         }
     }
 
@@ -49,30 +42,27 @@ public:
     }
 
     u32 find(u32 index) override {
-        u64 stack = meta -> get(index);
-        u64 bottom = stack & ((1ull << width) - 1);
-        stack >>= width;
-        stack |= bottom << (width * (ways - 1));
-        meta -> put(index, stack);
+        u32 stack_bottom = index * ways, stack_top = stack_bottom + ways;
+        u32 bottom = meta -> get(stack_bottom);
+        for (u32 i = stack_bottom; i < stack_top - 1; ++ i)
+            meta -> put(i, meta -> get(i + 1));
+        meta -> put(stack_top - 1, bottom);
         return bottom;
     }
 
     void hit(u32 index, u32 way) override {
-        u64 stack = meta -> get(index);
-        static u8 s[16]; int pos = -1;
-        for (u32 i = 0; i < ways; ++ i) {
-            s[i] = stack & ((1ull << width) - 1);
-            stack >>= width;
-            if (s[i] == way)
-                pos = i;
+        u32 stack_bottom = index * ways, stack_top = stack_bottom + ways;
+        for (u32 i = stack_bottom; i < stack_top; ++ i) {
+            if (meta -> get(i) == way) {
+                for (u32 j = i; j < stack_top - 1; ++ j)
+                    meta -> put(j, meta -> get(j + 1));
+                meta -> put(stack_top - 1, way);
+                return;
+            }
         }
-        stack = way;
-        for (int i = ways - 1; ~ i; -- i) {
-            if (i == pos)
-                continue;
-            stack = (stack << width) | s[i];
-        }
-        meta -> put(index, stack);
+
+        // Unreachable
+        assert(false);
     }
 
     ~LRUReplace() {

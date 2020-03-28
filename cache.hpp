@@ -170,6 +170,7 @@ public:
         double rate = 100.0 * hit / (hit + miss);
         printf("Case %s:\n", case_name.c_str());
         printf(" > Type: %s\n", std:: string(NAMEOF_ENUM(type)).c_str());
+        printf(" > Block size: %d bytes\n", block_size);
         printf(" > Replace policy: %s\n", std:: string(NAMEOF_ENUM(replace_type)).c_str());
         printf(" > Write Allocate policy: %s\n", std:: string(NAMEOF_ENUM(write_allocate_type)).c_str());
         printf(" > Write policy: %s\n", std:: string(NAMEOF_ENUM(write_policy_type)).c_str());
