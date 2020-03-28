@@ -15,22 +15,27 @@ inline u32 log2(u32 value) {
     return ret;
 }
 
-// TODO: check r = 64 whether works or r < l
 inline u64 cut_bits(u64 value, u64 l, u64 r) {
     value >>= l;
-    value &= (1ull << r) - 1ull;
+    value &= (1ull << (r - l)) - 1ull;
     return value;
 }
 
-inline u64 get_bit(u64 value, u64 bit) {
-    return (value >> bit) & 1;
+inline u64 get_bit(u64 value, u64 which) {
+    return (value >> which) & 1;
 }
 
 inline void modify_bit(u64 &value, u64 which, u64 bit) {
     value |= 1 << which;
-    if (!which) {
+    if (!bit) {
         value ^= 1 << which;
     }
+}
+
+inline void update_bits(u8 &value, u8 update, u32 l, u32 r) {
+    u8 ones = ((1 << (r - l)) - 1) << l;
+    value |= ones; value ^= ones;
+    value |= update << l;
 }
 
 // which = 0 for left, 1 for right
@@ -61,28 +66,28 @@ public:
     u64 get(u32 addr) {
         u64 ret = 0;
         u32 bits_l = addr * unit_bits, bits_r = bits_l + unit_bits;
-        u32 l = bits_l / 8, r = (bits_r - 1) / 8;
+        int l = bits_l / 8, r = (bits_r - 1) / 8;
         for (u32 i = l; i <= r; ++ i) {
             u32 cut_l = (i == l) ? bits_l % 8 : 0;
             u32 cut_r = (i == r) ? bits_r % 8 : 8;
             cut_r = (!cut_r) ? 8 : cut_r;
+            ret <<= cut_r - cut_l;
             ret |= cut_bits(data[i], cut_l, cut_r) & 255;
-            if (i != r) {
-                ret <<= std:: min((u32) 8, bits_r - i * 8);
-            }
+            // printf("get %d %llx l=%d r=%d ret=%llx\n", i, cut_bits(data[i], cut_l, cut_r) & 255, cut_l, cut_r, ret);
         }
         return ret;
     }
 
     void put(u32 addr, u64 entry) {
         u32 bits_l = addr * unit_bits, bits_r = bits_l + unit_bits;
-        u32 l = bits_l / 8, r = (bits_r - 1) / 8, processed = 0;
-        for (u32 i = l; i <= r; ++ i) {
-            u32 cut_size = (i == l) ? ((i + 1) * 8 - bits_l): 8;
-            u32 cut = std::min(processed + 8, unit_bits);
-            u8 update = cut_bits(entry, processed, cut);
-            data[i] |= update;
-            processed = cut;
+        int l = bits_l / 8, r = (bits_r - 1) / 8;
+        for (int i = r; i >= l; -- i) {
+            u32 cut_l = (i == l) ? bits_l % 8 : 0;
+            u32 cut_r = (i == r) ? bits_r % 8 : 8;
+            cut_r = (!cut_r) ? 8 : cut_r;
+            update_bits(data[i], entry & ((1ull << (cut_r - cut_l)) - 1ull), cut_l, cut_r);
+            // printf("update %d %llx l=%d r=%d\n", i, entry & ((1ull << (cut_r - cut_l)) - 1ull), cut_l, cut_r);
+            entry >>= (cut_r - cut_l);
         }
     }
 };
