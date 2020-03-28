@@ -1,3 +1,4 @@
 trace
 main
 *.o
+.vscode

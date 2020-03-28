@@ -100,14 +100,20 @@ public:
     }
 };
 
-class TreeReplace: CacheReplace {
-    u32 count, ways;
+// Bit 0/1 means older
+class TreeLRUReplace: CacheReplace {
+    u32 count, ways, depth;
     Bitmap *meta;
 
 public:
-    TreeReplace(u32 _count, u32 _ways) {
+    TreeLRUReplace(u32 _count, u32 _ways) {
+        if (_ways > 64) {
+            printf("Tree LRU does not support ways > 64");
+            return;
+        }
         count = _count, ways = _ways;
         meta = new Bitmap(ways, count);
+        depth = log2(ways);
     }
 
     u32 metaSize() {
@@ -115,14 +121,30 @@ public:
     }
 
     u32 find(u32 index) {
-
+        u64 tree = meta -> get(index);
+        u32 node = 0, way = 0;
+        for (int i = depth - 1; ~ i; -- i) {
+            u32 bit = get_bit(tree, node);
+            modify_bit(tree, node, bit ^ 1);
+            node = child(node, bit);
+            way = (way << 1) | bit;
+        }
+        meta -> put(index, tree);
+        return way;
     }
 
     void hit(u32 index, u32 way) {
-        
+        u64 tree = meta -> get(index);
+        u32 node = 0;
+        for (int i = depth - 1; ~ i; -- i) {
+            u32 bit = get_bit(way, i);
+            modify_bit(tree, i, bit ^ 1);
+            node = child(node, bit);
+        }
+        meta -> put(index, tree);
     }
 
-    ~TreeReplace() {
+    ~TreeLRUReplace() {
         delete meta;
     }
 };

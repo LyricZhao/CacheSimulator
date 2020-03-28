@@ -21,14 +21,32 @@ inline u64 cut_bits(u64 value, u64 l, u64 r) {
     value &= (1ull << r) - 1ull;
 }
 
+inline u64 get_bit(u64 value, u64 bit) {
+    return (value >> bit) & 1;
+}
+
+inline void modify_bit(u64 &value, u64 which, u64 bit) {
+    value |= 1 << which;
+    if (!which) {
+        value ^= 1 << which;
+    }
+}
+
+// which = 0 for left, 1 for right
+inline u32 child(u32 index, u32 which) {
+    return (index << 1) + 1 + which;
+}
+
 class Bitmap {
     u8 *data;
 
-    u32 unit_bits, count;
+    u32 unit_bits, count, bytes;
 public:
     Bitmap(u32 _unit_bits, u32 _count) {
         unit_bits = _unit_bits, count = _count;
-        data = (u8*) std:: malloc(count * _unit_bits / 8);
+        bytes = count * _unit_bits / 8;
+        data = (u8*) std:: malloc(bytes);
+        memset((void*) data, 0, bytes);
     }
 
     ~Bitmap() {
@@ -36,7 +54,7 @@ public:
     }
 
     u32 size() {
-        return unit_bits * count / 8;
+        return bytes;
     }
 
     u64 get(u32 addr) {
