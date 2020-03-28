@@ -12,6 +12,7 @@ int main() {
     Cache64 cache(LayoutType::DIRECT, ReplaceType::RANDOM, WriteAllocateType::WRITE_ALLOCATE, WritePolicyType::WRITE_BACK, 131072, 8, "astar");
     bool type; u64 addr;
     while (reader.read(type, addr)) {
+        printf("%d addr=%llx\n", type, addr);
         type ? cache.read(addr) : cache.write(addr);
     }
 

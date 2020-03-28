@@ -17,7 +17,7 @@ public:
     virtual u32 metaSize() = 0;
     virtual u32 find(u32 index) = 0;
     virtual void hit(u32 index, u32 way) = 0;
-//     virtual ~CacheReplace();
+    virtual ~CacheReplace() {}
 };
 
 class LRUReplace: public CacheReplace {

@@ -54,13 +54,11 @@ public:
     Cache64(LayoutType type, ReplaceType replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size, const char *trace_name) {
         // Parameters
         switch (type) {
-            DIRECT: ways = 1;           break;
-            FULLY:  ways = _cache_size; break;
-            WAY_4:  ways = 4;           break;
-            WAY_8:  ways = 8;           break;
-            default:
-                printf("Cache layout type does not support");
-                break;
+            case DIRECT:    ways = 1;           break;
+            case FULLY:     ways = _cache_size; break;
+            case WAY_4:     ways = 4;           break;
+            case WAY_8:     ways = 8;           break;
+            default: printf("Cache layout type does not support\n");
         }
         cache_size = _cache_size;
         block_size = _block_size;
@@ -86,7 +84,7 @@ public:
             case RANDOM:    replace = new RandomReplace(ways);                  break;
             case TREELRU:   replace = new TreeLRUReplace(index_count, ways);    break;
             default:
-                printf("Replace policy does not support");
+                printf("Replace policy does not support\n");
                 break;
         }
 
