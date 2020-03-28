@@ -19,6 +19,7 @@ inline u32 log2(u32 value) {
 inline u64 cut_bits(u64 value, u64 l, u64 r) {
     value >>= l;
     value &= (1ull << r) - 1ull;
+    return value;
 }
 
 inline u64 get_bit(u64 value, u64 bit) {

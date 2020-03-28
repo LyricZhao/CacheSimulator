@@ -4,7 +4,6 @@
 # include <cstdlib>
 # include <cstdio>
 
-# include "layout.hpp"
 # include "utility.hpp"
 
 enum ReplaceType {
@@ -18,6 +17,7 @@ public:
     virtual u32 metaSize() = 0;
     virtual u32 find(u32 index) = 0;
     virtual void hit(u32 index, u32 way) = 0;
+//     virtual ~CacheReplace();
 };
 
 class LRUReplace: public CacheReplace {
@@ -53,6 +53,7 @@ public:
         stack >>= width;
         stack |= bottom << (width * (ways - 1));
         meta -> put(index, stack);
+        return bottom;
     }
 
     void hit(u32 index, u32 way) override {
@@ -87,9 +88,7 @@ public:
         srand(SEED);
     }
 
-    void hit(u32 index, u32 way) override {
-        // Do nothing
-    }
+    void hit(u32 index, u32 way) override {}
 
     u32 metaSize() override {
         return 0;
@@ -98,6 +97,8 @@ public:
     u32 find(u32 index) override {
         return rand() % ways;
     }
+
+    ~RandomReplace() {}
 };
 
 // Bit 0/1 means older

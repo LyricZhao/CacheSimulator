@@ -2,3 +2,4 @@ trace
 main
 *.o
 .vscode
+log

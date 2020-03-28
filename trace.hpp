@@ -24,7 +24,7 @@ public:
 
     bool read(bool &type, u64 &addr) {
         char _type[2];
-        int ret = fscanf(file, "%s %x", _type, &addr);
+        int ret = fscanf(file, "%s %llx", _type, &addr);
         type = (_type[0] == 'r');
         return ret != EOF;
     }
