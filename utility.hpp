@@ -35,6 +35,10 @@ public:
         std:: free((void*) data);
     }
 
+    u32 size() {
+        return unit_bits * count / 8;
+    }
+
     u64 get(u32 addr) {
         u64 ret = 0;
         u32 bits_l = addr * unit_bits, bits_r = bits_l + unit_bits;

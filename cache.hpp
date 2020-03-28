@@ -54,7 +54,7 @@ public:
         meta = new Bitmap(bits_tag, cache_size / block_size);
     }
 
-    bool read(u64 addr) {
+    void read(u64 addr) {
         u64 offset = cut_bits(addr, 0, bits_offset);
         u64 index = cut_bits(addr, bits_offset, bits_offset + bits_index);
         u64 tag = cut_bits(addr, bits_offset + bits_index, 64);
@@ -67,7 +67,7 @@ public:
             u64 entry_tag = entry >> 2;
             if (valid && entry_tag == tag) { // Hit
                 replace -> hit(index, i % ways);
-                return true;
+                return;
             } else if (!valid) {
                 first_empty = i;
                 has_empty = true;
@@ -82,7 +82,10 @@ public:
             pos = l + replace -> find(index);
         }
         meta -> put(pos, (tag << 2) | 3);
-        return false;
+    }
+
+    void write(u64 addr) {
+        
     }
 
     void statistics() {
