@@ -10,17 +10,17 @@
 enum ReplaceType {
     LRU,
     RANDOM,
-    TREE
+    TREELRU
 };
 
 class CacheReplace {
 public:
-    virtual u32 metaSize() const = 0;
-    virtual u32 find(u32 index) const = 0;
-    virtual void hit(u32 index, u32 way) const = 0;
+    virtual u32 metaSize() = 0;
+    virtual u32 find(u32 index) = 0;
+    virtual void hit(u32 index, u32 way) = 0;
 };
 
-class LRUReplace: CacheReplace {
+class LRUReplace: public CacheReplace {
     u32 count, ways, width;
     Bitmap *meta;
 
@@ -43,11 +43,11 @@ public:
         }
     }
 
-    u32 metaSize() {
+    u32 metaSize() override {
         return meta -> size();
     }
 
-    u32 find(u32 index) {
+    u32 find(u32 index) override {
         u64 stack = meta -> get(index);
         u64 bottom = stack & ((1ull << width) - 1);
         stack >>= width;
@@ -55,7 +55,7 @@ public:
         meta -> put(index, stack);
     }
 
-    void hit(u32 index, u32 way) {
+    void hit(u32 index, u32 way) override {
         u64 stack = meta -> get(index);
         static u8 s[16]; u32 pos;
         for (u32 i = 0; i < ways; ++ i) {
@@ -77,7 +77,7 @@ public:
     }
 };
 
-class RandomReplace: CacheReplace {
+class RandomReplace: public CacheReplace {
     # define SEED 19981011
     u32 ways;
 
@@ -87,21 +87,21 @@ public:
         srand(SEED);
     }
 
-    void hit(u32 index, u32 way) {
+    void hit(u32 index, u32 way) override {
         // Do nothing
     }
 
-    u32 metaSize() {
+    u32 metaSize() override {
         return 0;
     }
 
-    u32 find(u32 index) {
+    u32 find(u32 index) override {
         return rand() % ways;
     }
 };
 
 // Bit 0/1 means older
-class TreeLRUReplace: CacheReplace {
+class TreeLRUReplace: public CacheReplace {
     u32 count, ways, depth;
     Bitmap *meta;
 
@@ -116,11 +116,11 @@ public:
         depth = log2(ways);
     }
 
-    u32 metaSize() {
+    u32 metaSize() override {
         return meta -> size();
     }
 
-    u32 find(u32 index) {
+    u32 find(u32 index) override {
         u64 tree = meta -> get(index);
         u32 node = 0, way = 0;
         for (int i = depth - 1; ~ i; -- i) {
@@ -133,7 +133,7 @@ public:
         return way;
     }
 
-    void hit(u32 index, u32 way) {
+    void hit(u32 index, u32 way) override {
         u64 tree = meta -> get(index);
         u32 node = 0;
         for (int i = depth - 1; ~ i; -- i) {
