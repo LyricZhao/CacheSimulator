@@ -46,7 +46,7 @@ inline u32 child(u32 index, u32 which) {
 
 void generateCSVHeader(const char* csv) {
     FILE* file = fopen(csv, "w");
-    fprintf(file, "type,block_size,replace,write_allocate,write_policy,hit,miss,rate,meta,layout_meta,replace_meta,write_meta\n");
+    fprintf(file, "case,type,block_size,replace,write_allocate,write_policy,hit,miss,rate,meta,layout_meta,replace_meta,write_meta\n");
     fclose(file);
 }
 

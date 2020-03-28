@@ -189,8 +189,9 @@ public:
 
         if (csv != nullptr) {
             FILE *cf = fopen(csv, "a+");
-            // type,block_size,replace,write_allocate,write_policy,hit,miss,rate,meta,layout_meta,replace_meta,write_meta
-            fprintf(cf, "%s,%d,%s,%s,%s,%d,%d,%.5lf,%d,%d,%d,%d\n",
+            // case,type,block_size,replace,write_allocate,write_policy,hit,miss,rate,meta,layout_meta,replace_meta,write_meta
+            fprintf(cf, "%s,%s,%d,%s,%s,%s,%d,%d,%.5lf,%d,%d,%d,%d\n",
+                case_name.c_str(),
                 std:: string(NAMEOF_ENUM(type)).c_str(),
                 block_size,
                 std:: string(NAMEOF_ENUM(replace_type)).c_str(),
