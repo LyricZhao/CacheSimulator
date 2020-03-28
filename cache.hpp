@@ -1,14 +1,17 @@
 # ifndef __LAYOUT_HPP__
 # define __LAYOUT_HPP__
 
+# include <string>
+
+# include "nameof.hpp"
 # include "replace.hpp"
 # include "utility.hpp"
 
 enum LayoutType {
     DIRECT,
     FULLY,
-    WAY_4,
-    WAY_8
+    WAY4,
+    WAY8
 };
 
 // Address layout: [tag index offset]
@@ -29,13 +32,16 @@ class Cache64 {
     // Replacer
     CacheReplace *replace;
 
+    // Logger
+    FILE *file;
+
 public:
-    Cache64(LayoutType type, u32 _cache_size, u32 _block_size, ReplaceType replace_type) {
+    Cache64(LayoutType type, u32 _cache_size, u32 _block_size, ReplaceType replace_type, const char *trace_name) {
         switch (type) {
             DIRECT: ways = 1;           break;
             FULLY:  ways = _cache_size; break;
-            WAY_4:  ways = 4;           break;
-            WAY_8:  ways = 8;           break;
+            WAY4:   ways = 4;           break;
+            WAY8:   ways = 8;           break;
             default:
                 printf("Cache layout type does not support");
                 break;
@@ -52,6 +58,14 @@ public:
         meta_size = (bits_tag + 2) * (cache_size / block_size) / 8; // valid + dirty
 
         meta = new Bitmap(bits_tag, cache_size / block_size);
+
+        // Open log file
+        char filename[256];
+        sprintf(filename, "log/%s_%s_%dB.log",
+            std:: string(NAMEOF_ENUM(type)).c_str(),
+            std:: string(NAMEOF_ENUM(replace_type)).c_str(),
+            block_size);
+        file = fopen(filename, "w");
     }
 
     void read(u64 addr) {
@@ -85,7 +99,17 @@ public:
     }
 
     void write(u64 addr) {
-        
+
+    }
+
+    void log(bool x) {
+        if (x) {
+            ++ hit;
+            fprintf(file, "Hit\n");
+        } else {
+            ++ miss;
+            fprintf(file, "Miss\n");
+        }
     }
 
     void statistics() {
@@ -95,6 +119,7 @@ public:
 
     ~Cache64() {
         delete meta;
+        fclose(file);
     }
 };
 
