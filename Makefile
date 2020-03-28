@@ -3,3 +3,9 @@ main: main.cpp cache.hpp nameof.hpp replace.hpp trace.hpp utility.hpp Makefile
 
 run: main
 	./main
+
+clean:
+	rm -rf *.o main
+
+clean_log:
+	rm -rf log/*

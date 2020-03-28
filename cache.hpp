@@ -50,12 +50,14 @@ class Cache64 {
     WritePolicyType write_policy_type;
 
     // Logger
+    std:: string case_name;
     FILE *file;
 
 public:
-    Cache64(LayoutType _type, ReplaceType _replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size, const char *trace_name) {
+    Cache64(const char *name, LayoutType _type, ReplaceType _replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size) {
         type = _type;
         replace_type = _replace_type;
+        case_name = std:: string(name);
         
         // Parameters
         switch (type) {
@@ -93,7 +95,8 @@ public:
 
         // Open log file
         char filename[256];
-        sprintf(filename, "log/%s+%s+%s+%s+%dB.log",
+        sprintf(filename, "log/%s_%s+%s+%s+%s+%dB.log",
+            name,
             std:: string(NAMEOF_ENUM(type)).c_str(),
             std:: string(NAMEOF_ENUM(replace_type)).c_str(),
             std:: string(NAMEOF_ENUM(write_allocate_type)).c_str(),
@@ -164,7 +167,7 @@ public:
 
     void statistics() {
         double rate = 100.0 * hit / (hit + miss);
-        printf("Case info:\n");
+        printf("Case %s:\n", case_name.c_str());
         printf(" > Type: %s\n", std:: string(NAMEOF_ENUM(type)).c_str());
         printf(" > Replace policy: %s\n", std:: string(NAMEOF_ENUM(replace_type)).c_str());
         printf(" > Write Allocate policy: %s\n", std:: string(NAMEOF_ENUM(write_allocate_type)).c_str());
@@ -177,7 +180,7 @@ public:
         printf(" > Total space: %d bytes\n", total_size);
         printf(" > Total meta size: %d bytes (%.2lf%%)\n", total_meta_size, rate);
         printf(" > Replace-caused meta size: %d bytes\n", replace -> metaSize());
-        printf(" > Write-caused meta size: %d bytes\n", writeCausedSize());
+        printf(" > Write-caused meta size: %d bytes\n\n", writeCausedSize());
     }
 
     ~Cache64() {
