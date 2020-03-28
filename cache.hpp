@@ -54,11 +54,11 @@ public:
     Cache64(LayoutType type, ReplaceType replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size, const char *trace_name) {
         // Parameters
         switch (type) {
-            case DIRECT:    ways = 1;           break;
-            case FULLY:     ways = _cache_size; break;
-            case WAY_4:     ways = 4;           break;
-            case WAY_8:     ways = 8;           break;
-            default: printf("Cache layout type does not support\n");
+            case DIRECT:    ways = 1;                           break;
+            case FULLY:     ways = _cache_size / _block_size;   break;
+            case WAY_4:     ways = 4;                           break;
+            case WAY_8:     ways = 8;                           break;
+            default: printf("Cache layout type does not support\n"); exit(0);
         }
         cache_size = _cache_size;
         block_size = _block_size;
@@ -68,7 +68,6 @@ public:
         bits_offset = log2(block_size); // index by bytes not words
         bits_tag = 64 - bits_index - bits_offset;
         index_count = 1 << bits_index;
-        // printf("[tag = %d index = %d offset = %d]\n", bits_tag, bits_index, bits_offset);
 
         valid_dirty_size = 1 + (_write_policy_type == WritePolicyType::WRITE_BACK);
         size = (bits_tag + valid_dirty_size + block_size * 8) * (cache_size / block_size) / 8;
@@ -84,9 +83,7 @@ public:
             case LRU:       replace = new LRUReplace(index_count, ways);        break;
             case RANDOM:    replace = new RandomReplace(ways);                  break;
             case TREELRU:   replace = new TreeLRUReplace(index_count, ways);    break;
-            default:
-                printf("Replace policy does not support\n");
-                break;
+            default: printf("Replace policy does not support\n"); exit(0);
         }
 
         // Open log file
@@ -104,14 +101,11 @@ public:
         u64 tag = cut_bits(addr, bits_offset + bits_index, 64);
         
         u32 l = index * ways, r = l + ways;
-        // if (addr == 0x3b56c40006ull)
-        //     printf("addr=%llx tag=%llx index=%llx offset=%llx l=%d r=%d\n", addr, tag, index, offset, l, r);
         bool has_empty = false; u32 first_empty; 
         for (u32 i = l; i < r; ++ i) {
             u64 entry = meta -> get(i);
             bool valid = entry & 1;
             u64 entry_tag = entry >> valid_dirty_size;
-            // printf("i=%x valid=%d entry_tag=%llx\n", i, valid, entry_tag);
             if (valid && entry_tag == tag) { // Hit
                 replace -> hit(index, i % ways);
                 log(HIT);
@@ -121,8 +115,6 @@ public:
                 has_empty = true;
             }
         }
-        // if (addr == 0x3b56c40006ull)
-        //     printf("finish"), fflush(stdout);
 
         log(MISS);
         if (just_check)
@@ -161,7 +153,7 @@ public:
 
     void statistics() {
         double rate = 1.0 * hit / (hit + miss);
-        printf("Hit rate: %.2f (%d hits, %d misses)\n", rate, hit, miss);
+        printf("Hit rate: %.5f (%d hits, %d misses)\n", rate, hit, miss);
     }
 
     ~Cache64() {

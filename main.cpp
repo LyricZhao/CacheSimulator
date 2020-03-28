@@ -7,12 +7,11 @@
 
 int main() {
     TraceReader reader;
-    reader.open("trace/astar.trace");
+    reader.open("trace/bzip2.trace");
 
-    Cache64 cache(LayoutType::DIRECT, ReplaceType::RANDOM, WriteAllocateType::WRITE_ALLOCATE, WritePolicyType::WRITE_BACK, 131072, 8, "astar");
+    Cache64 cache(LayoutType::WAY_4, ReplaceType::TREELRU, WriteAllocateType::WRITE_ALLOCATE, WritePolicyType::WRITE_BACK, 131072, 64, "bzip2");
     bool type; u64 addr;
     while (reader.read(type, addr)) {
-        // printf("%d addr=%llx\n", type, addr);
         type ? cache.read(addr) : cache.write(addr);
     }
 

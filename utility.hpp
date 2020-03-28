@@ -73,7 +73,6 @@ public:
             cut_r = (!cut_r) ? 8 : cut_r;
             ret <<= cut_r - cut_l;
             ret |= cut_bits(data[i], cut_l, cut_r) & 255;
-            // printf("get %d %llx l=%d r=%d ret=%llx\n", i, cut_bits(data[i], cut_l, cut_r) & 255, cut_l, cut_r, ret);
         }
         return ret;
     }
@@ -86,7 +85,6 @@ public:
             u32 cut_r = (i == r) ? bits_r % 8 : 8;
             cut_r = (!cut_r) ? 8 : cut_r;
             update_bits(data[i], entry & ((1ull << (cut_r - cut_l)) - 1ull), cut_l, cut_r);
-            // printf("update %d %llx l=%d r=%d\n", i, entry & ((1ull << (cut_r - cut_l)) - 1ull), cut_l, cut_r);
             entry >>= (cut_r - cut_l);
         }
     }

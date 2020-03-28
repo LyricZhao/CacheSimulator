@@ -1,6 +1,7 @@
 # ifndef __REPLACE_HPP__
 # define __REPLACE_HPP__
 
+# include <algorithm>
 # include <cstdlib>
 # include <cstdio>
 
@@ -27,15 +28,15 @@ class LRUReplace: public CacheReplace {
 public:
     LRUReplace(u32 _count, u32 _ways) {
         if (_ways > 16) {
-            printf("LRU does not support ways > 16");
-            return;
+            printf("LRU does not support ways > 16\n");
+            exit(0);
         }
         
-        count = _count, ways = _ways, width = log2(ways);
+        count = _count, ways = _ways, width = std:: max(log2(ways), (u32) 1);
         meta = new Bitmap(width * ways, count);
 
         u64 entry = 0;
-        for (u32 i = 0; i < entry; ++ i) {
+        for (u32 i = 0; i < ways; ++ i) {
             entry = (entry << width) | i;
         }
         for (u32 i = 0; i < count; ++ i) {
@@ -58,14 +59,15 @@ public:
 
     void hit(u32 index, u32 way) override {
         u64 stack = meta -> get(index);
-        static u8 s[16]; u32 pos;
+        static u8 s[16]; int pos = -1;
         for (u32 i = 0; i < ways; ++ i) {
             s[i] = stack & ((1ull << width) - 1);
+            stack >>= width;
             if (s[i] == way)
                 pos = i;
         }
         stack = way;
-        for (u32 i = 0; i < ways; ++ i) {
+        for (int i = ways - 1; ~ i; -- i) {
             if (i == pos)
                 continue;
             stack = (stack << width) | s[i];
@@ -109,8 +111,8 @@ class TreeLRUReplace: public CacheReplace {
 public:
     TreeLRUReplace(u32 _count, u32 _ways) {
         if (_ways > 64) {
-            printf("Tree LRU does not support ways > 64");
-            return;
+            printf("Tree LRU does not support ways > 64\n");
+            exit(0);
         }
         count = _count, ways = _ways;
         meta = new Bitmap(ways, count);
