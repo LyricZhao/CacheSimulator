@@ -43,6 +43,8 @@ class Cache64 {
     u32 hit, miss;
 
     // Strategies
+    LayoutType type;
+    ReplaceType replace_type;
     CacheReplace *replace;
     WriteAllocateType write_allocate_type;
     WritePolicyType write_policy_type;
@@ -51,7 +53,10 @@ class Cache64 {
     FILE *file;
 
 public:
-    Cache64(LayoutType type, ReplaceType replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size, const char *trace_name) {
+    Cache64(LayoutType _type, ReplaceType _replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size, const char *trace_name) {
+        type = _type;
+        replace_type = _replace_type;
+        
         // Parameters
         switch (type) {
             case DIRECT:    ways = 1;                           break;
@@ -88,9 +93,11 @@ public:
 
         // Open log file
         char filename[256];
-        sprintf(filename, "log/%s+%s+%dB.log",
+        sprintf(filename, "log/%s+%s+%s+%s+%dB.log",
             std:: string(NAMEOF_ENUM(type)).c_str(),
             std:: string(NAMEOF_ENUM(replace_type)).c_str(),
+            std:: string(NAMEOF_ENUM(write_allocate_type)).c_str(),
+            std:: string(NAMEOF_ENUM(write_policy_type)).c_str(),
             block_size);
         file = fopen(filename, "w");
     }
@@ -151,9 +158,26 @@ public:
         }
     }
 
+    u32 writeCausedSize() {
+        return (write_policy_type == WritePolicyType::WRITE_BACK) * (cache_size / block_size);
+    }
+
     void statistics() {
-        double rate = 1.0 * hit / (hit + miss);
-        printf("Hit rate: %.5f (%d hits, %d misses)\n", rate, hit, miss);
+        double rate = 100.0 * hit / (hit + miss);
+        printf("Case info:\n");
+        printf(" > Type: %s\n", std:: string(NAMEOF_ENUM(type)).c_str());
+        printf(" > Replace policy: %s\n", std:: string(NAMEOF_ENUM(replace_type)).c_str());
+        printf(" > Write Allocate policy: %s\n", std:: string(NAMEOF_ENUM(write_allocate_type)).c_str());
+        printf(" > Write policy: %s\n", std:: string(NAMEOF_ENUM(write_policy_type)).c_str());
+        printf(" > Hit rate: %.5f%% (%d hits, %d misses)\n", rate, hit, miss);
+
+        u32 total_size = size + replace -> metaSize() + writeCausedSize();
+        u32 total_meta_size = meta_size + replace -> metaSize() + writeCausedSize();
+        rate = 100. * total_meta_size / total_size;
+        printf(" > Total space: %d bytes\n", total_size);
+        printf(" > Total meta size: %d bytes (%.2lf%%)\n", total_meta_size, rate);
+        printf(" > Replace-caused meta size: %d bytes\n", replace -> metaSize());
+        printf(" > Write-caused meta size: %d bytes\n", writeCausedSize());
     }
 
     ~Cache64() {
