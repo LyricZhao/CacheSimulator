@@ -3,3 +3,4 @@ main
 *.o
 .vscode
 log
+output.csv
