@@ -2,6 +2,7 @@
 # define __UTILITY_HPP__
 
 # include <algorithm>
+# include <cstdio>
 
 typedef unsigned long long  u64;
 typedef unsigned int        u32;
@@ -41,6 +42,12 @@ inline void update_bits(u8 &value, u8 update, u32 l, u32 r) {
 // which = 0 for left, 1 for right
 inline u32 child(u32 index, u32 which) {
     return (index << 1) + 1 + which;
+}
+
+void generateCSVHeader(const char* csv) {
+    FILE* file = fopen(csv, "w");
+    fprintf(file, "type,block_size,replace,write_allocate,write_policy,hit,miss,rate,meta,layout_meta,replace_meta,write_meta\n");
+    fclose(file);
 }
 
 class Bitmap {

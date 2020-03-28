@@ -52,13 +52,15 @@ class Cache64 {
     // Logger
     std:: string case_name;
     FILE *file;
+    const char *csv;
 
 public:
-    Cache64(const char *name, LayoutType _type, ReplaceType _replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size) {
+    Cache64(const char *name, const char *_csv, LayoutType _type, ReplaceType _replace_type, WriteAllocateType _write_allocate_type, WritePolicyType _write_policy_type, u32 _cache_size, u32 _block_size) {
         type = _type;
         replace_type = _replace_type;
         case_name = std:: string(name);
         hit = miss = 0;
+        csv = _csv;
         
         // Parameters
         switch (type) {
@@ -167,22 +169,41 @@ public:
     }
 
     void statistics() {
-        double rate = 100.0 * hit / (hit + miss);
+        double hit_rate = 100.0 * hit / (hit + miss);
         printf("Case %s:\n", case_name.c_str());
         printf(" > Type: %s\n", std:: string(NAMEOF_ENUM(type)).c_str());
         printf(" > Block size: %d bytes\n", block_size);
         printf(" > Replace policy: %s\n", std:: string(NAMEOF_ENUM(replace_type)).c_str());
         printf(" > Write Allocate policy: %s\n", std:: string(NAMEOF_ENUM(write_allocate_type)).c_str());
         printf(" > Write policy: %s\n", std:: string(NAMEOF_ENUM(write_policy_type)).c_str());
-        printf(" > Hit rate: %.5f%% (%d hits, %d misses)\n", rate, hit, miss);
+        printf(" > Hit rate: %.5f%% (%d hits, %d misses)\n", hit_rate, hit, miss);
 
         u32 total_size = size + replace -> metaSize() + writeCausedSize();
         u32 total_meta_size = meta_size + replace -> metaSize() + writeCausedSize();
-        rate = 100. * total_meta_size / total_size;
+        double meta_rate = 100. * total_meta_size / total_size;
         printf(" > Total space: %d bytes\n", total_size);
-        printf(" > Total meta size: %d bytes (%.2lf%%)\n", total_meta_size, rate);
+        printf(" > Total meta size: %d bytes (%.2lf%%)\n", total_meta_size, meta_rate);
+        printf(" > Layout-caused meta size: %d bytes\n", meta_size);
         printf(" > Replace-caused meta size: %d bytes\n", replace -> metaSize());
         printf(" > Write-caused meta size: %d bytes\n\n", writeCausedSize());
+
+        if (csv != nullptr) {
+            FILE *cf = fopen(csv, "a+");
+            // type,block_size,replace,write_allocate,write_policy,hit,miss,rate,meta,layout_meta,replace_meta,write_meta
+            fprintf(cf, "%s,%d,%s,%s,%s,%d,%d,%.5lf,%d,%d,%d,%d\n",
+                std:: string(NAMEOF_ENUM(type)).c_str(),
+                block_size,
+                std:: string(NAMEOF_ENUM(replace_type)).c_str(),
+                std:: string(NAMEOF_ENUM(write_allocate_type)).c_str(),
+                std:: string(NAMEOF_ENUM(write_policy_type)).c_str(),
+                hit, miss,
+                hit_rate,
+                total_meta_size,
+                meta_size,
+                replace -> metaSize(),
+                writeCausedSize());
+            fclose(cf);
+        }
     }
 
     ~Cache64() {
