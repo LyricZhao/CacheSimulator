@@ -58,6 +58,7 @@ public:
         type = _type;
         replace_type = _replace_type;
         case_name = std:: string(name);
+        hit = miss = 0;
         
         // Parameters
         switch (type) {
