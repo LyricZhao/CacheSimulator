@@ -28,7 +28,7 @@ void experiment_1(const char *csv) {
 
 #### 输出结果
 
-输出日志参见 `code/log/` 中，实验中的命中率等数据见`code/output.csv`。
+输出日志参见 `code/log/` 中，实验中的命中率等源数据见`code/output.csv`。
 
 画图脚本见`code/draw.py`，图输出在`code/figures/`中。
 
@@ -207,4 +207,52 @@ void experiment_1(const char *csv) {
 可以看到：
 
 - 三种策略的差异非常小，命中率的个位数字几乎相同，也无法得出相对谁更好的结论，也可能是因为在 8 路的情况下，缩小了策略带来的差异，因为路数更多，需要替换的情况也就更少了；
+- 然而经过试验，发现在 4 路的情况下，它们的差异也非常小，这里我的想法是 4 路的时候替换的确定性更大（其实也是强行解释），所以这里我的结论是程序在执行的时候不会按照 Cache 替换的设计来，执行的模式并非经常会访问”前不久“之前的数据（比如顺序访问、图的随机访问），所以 Cache 替换策略更体现在小数点后；
 - 针对不同测例，astar 因为是图访问，所以更久不一定意味着不访问，这时候随机会稍好一些（非常不明显）；bzip2 估计是不会再次读取访问过的数据，所以没有差别；而 mcf 和 perlbench 可能更偏向综合一些，也有一定的时间局部性，所以这时候 LRU 和 TreeLRU 的表现稍好一些（也不明显）。
+
+#### 固定布局（块大小8字节，8路组相联）；固定替换策略（LRU）；尝试不同写策略
+
+**元数据开销情况**
+
+具体数据如下表：
+
+| 写分配策略         | 写回策略      | 总元数据 | 布局元数据 | 替换元数据 | 写策略元数据 |
+| ------------------ | ------------- | -------- | ---------- | ---------- | ------------ |
+| WRITE_ALLOCATE     | WRITE_BACK    | 129024   | 106496     | 6144       | 16384        |
+| WRITE_ALLOCATE     | WRITE_THROUGH | 110592   | 104448     | 6144       | 0            |
+| WRITE_NOT_ALLOCATE | WRITE_BACK    | 129024   | 106496     | 6144       | 16384        |
+| WRITE_NOT_ALLOCATE | WRITE_THROUGH | 110592   | 104448     | 6144       | 0            |
+
+可以得到结论，唯一对元数据开销的影响就是 Dirty 位有没有：
+
+- 如果写回策略是写回，则需要增加块数个二进制位；
+- 如果是写直达，则不需要 Dirty 位，开销为零。
+
+**对命中率影响**
+
+经测试，命中率数据如下：
+
+| 测例          | 写分配策略         | 写回策略      | 命中   | 缺失   | 命中率   |
+| ------------- | ------------------ | ------------- | ------ | ------ | -------- |
+| **astar**     | WRITE_ALLOCATE     | WRITE_BACK    | 384702 | 116766 | 76.71516 |
+| **astar**     | WRITE_ALLOCATE     | WRITE_THROUGH | 384702 | 116766 | 76.71516 |
+| **astar**     | WRITE_NOT_ALLOCATE | WRITE_BACK    | 328467 | 173001 | 65.50109 |
+| **astar**     | WRITE_NOT_ALLOCATE | WRITE_THROUGH | 328467 | 173001 | 65.50109 |
+| **bzip2**     | WRITE_ALLOCATE     | WRITE_BACK    | 537887 | 6627   | 98.78295 |
+| **bzip2**     | WRITE_ALLOCATE     | WRITE_THROUGH | 537887 | 6627   | 98.78295 |
+| **bzip2**     | WRITE_NOT_ALLOCATE | WRITE_BACK    | 497305 | 47209  | 91.33007 |
+| **bzip2**     | WRITE_NOT_ALLOCATE | WRITE_THROUGH | 497305 | 47209  | 91.33007 |
+| **mcf**       | WRITE_ALLOCATE     | WRITE_BACK    | 484468 | 23232  | 95.42407 |
+| **mcf**       | WRITE_ALLOCATE     | WRITE_THROUGH | 484468 | 23232  | 95.42407 |
+| **mcf**       | WRITE_NOT_ALLOCATE | WRITE_BACK    | 451107 | 56593  | 88.85306 |
+| **mcf**       | WRITE_NOT_ALLOCATE | WRITE_THROUGH | 451107 | 56593  | 88.85306 |
+| **perlbench** | WRITE_ALLOCATE     | WRITE_BACK    | 498357 | 9084   | 98.20984 |
+| **perlbench** | WRITE_ALLOCATE     | WRITE_THROUGH | 498357 | 9084   | 98.20984 |
+| **perlbench** | WRITE_NOT_ALLOCATE | WRITE_BACK    | 483777 | 23664  | 95.33660 |
+| **perlbench** | WRITE_NOT_ALLOCATE | WRITE_THROUGH | 483777 | 23664  | 95.33660 |
+
+结论：
+
+- 首先，写回策略不会对命中率产生任何影响，区别只是空间开销和执行行为（一个在第二次写回、一个直接写回）；
+- 其次，写分配策略非常重要，对最后结果影响也非常大，可以得到结论，程序在写入某个位置之后有比较明显的概率再次读取；
+- 针对不同测例，astar 算法因为是图访问模式，在搜索更新后，非常容易再次用到，所以写分配测例非常重要，影响也很大；而剩下三种，可能顺序访问内存的情况更多，影响相对较小，但也同样不可以忽略，可见在实际的设计中采用写分配的策略还是非常重要的。
