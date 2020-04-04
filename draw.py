@@ -12,7 +12,7 @@ def draw(data, gather, ax, ay, name):
         data = reduce_map[key]
         x = [float(d[ax]) for d in data]
         y = [float(d[ay]) for d in data]
-        plt.plot(x, y, label=key, linewidth=1)
+        plt.plot(x, y, label=key, linewidth=1, alpha=0.6)
     plt.legend()
     plt.savefig('figures/{}.png'.format(name))
 
